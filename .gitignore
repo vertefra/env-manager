@@ -1,0 +1,4 @@
+.env-manager/
+.secret
+.env
+.dist
