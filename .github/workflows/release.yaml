@@ -1,0 +1,75 @@
+name: Go CI and Release
+
+on:
+  push:
+    branches:
+      - master
+env:
+  APP_NAME: env-manager
+  DIST_DIR: dist
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+
+    - name: Get version
+      id: get_version
+      run: echo ::set-output name=VERSION::$(cat VERSION)
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21'  # Use the Go version of your choice
+
+    - name: Build
+      run: |
+        ./build.sh
+
+    - name: Set up Git
+      run: |
+        git config --local user.name "Your Name"
+        git config --local user.email "your-email@example.com"
+
+    - name: Tag the repository
+      run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
+
+    - name: Push tags
+      run: git push origin --tags
+
+    # This step uses actions/upload-artifact to upload artifacts
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: |
+          ${DIST_DIR}/${APP_NAME}-windows-amd64.exe
+          ${DIST_DIR}/${APP_NAME}-linux-amd64
+          ${DIST_DIR}/${APP_NAME}-darwin-amd64
+          ${DIST_DIR}/${APP_NAME}-darwin-arm64
+
+    # Create a release
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        release_name: Release v${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+
+    # Upload assets to the release
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./
+        asset_name: myapp-${{ matrix.os }}-${{ matrix.arch }}
+        asset_content_type: application/octet-stream
