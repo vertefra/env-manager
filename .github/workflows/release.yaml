@@ -7,6 +7,7 @@ on:
 env:
   APP_NAME: env-manager
   DIST_DIR: dist
+
 jobs:
   build-and-release:
     name: Build and Release
@@ -15,6 +16,8 @@ jobs:
     steps:
     - name: Set up Git repository
       uses: actions/checkout@v2
+      with:
+      token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     - name: Get version
       id: get_version
@@ -56,7 +59,7 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ env.PERSONAL_ACCESS_TOKEN }}
       with:
         tag_name: v${{ steps.get_version.outputs.VERSION }}
         release_name: Release v${{ steps.get_version.outputs.VERSION }}
@@ -67,9 +70,9 @@ jobs:
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ env.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./
-        asset_name: myapp-${{ matrix.os }}-${{ matrix.arch }}
+        asset_name: ${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
         asset_content_type: application/octet-stream
