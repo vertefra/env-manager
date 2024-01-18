@@ -34,5 +34,5 @@ in the headers
 In order to restore it
 
 ```
-env-manager
+env-manager get -i <header identifer>
 ```
