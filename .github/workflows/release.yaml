@@ -66,6 +66,11 @@ jobs:
         asset_name: ${APP_NAME}-${{ matrix.built }}
         asset_content_type: application/octet-stream
 
+
+  tag:
+    name: Tag
+    needs: build-and-release
+    runs-on: ubuntu-latest
     # Tag the repository with the release version
     - name: Set up Git
       run: |
