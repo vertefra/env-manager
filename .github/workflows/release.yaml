@@ -80,7 +80,7 @@ jobs:
 
   tag-branch:
     name: Tag
-    needs: build-and-release
+    needs: release
     runs-on: ubuntu-latest
 
     steps:
