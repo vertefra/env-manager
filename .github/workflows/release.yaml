@@ -10,6 +10,10 @@ env:
 
 jobs:
   build-and-release:
+    strategy:
+      matrix:
+        built: ['windows-amd64.exe', 'linux-amd64', 'darwin-amd64', 'darwin-arm64'] 
+    
     name: Build and Release
     runs-on: ubuntu-latest
 
@@ -38,11 +42,7 @@ jobs:
       with:
         name: binaries
         path: |
-          ${DIST_DIR}/${APP_NAME}-windows-amd64.exe
-          ${DIST_DIR}/${APP_NAME}-linux-amd64
-          ${DIST_DIR}/${APP_NAME}-darwin-amd64
-          ${DIST_DIR}/${APP_NAME}-darwin-arm64
-
+          ${DIST_DIR}/${APP_NAME}-${{ matrix.built }}
     # Create a release
     - name: Create Release
       id: create_release
@@ -62,8 +62,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${DIST_DIR}
-        asset_name: ${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
+        asset_path: ${DIST_DIR}/${APP_NAME}-${{ matrix.built }}
+        asset_name: ${APP_NAME}-${{ matrix.built }}
         asset_content_type: application/octet-stream
 
     # Tag the repository with the release version
