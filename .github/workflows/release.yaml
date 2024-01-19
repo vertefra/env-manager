@@ -66,19 +66,20 @@ jobs:
         asset_name: ${APP_NAME}-${{ matrix.built }}
         asset_content_type: application/octet-stream
 
-
-  tag:
+  tag-branch:
     name: Tag
     needs: build-and-release
     runs-on: ubuntu-latest
+
+    steps:
     # Tag the repository with the release version
-    - name: Set up Git
-      run: |
-        git config --local user.name "vertefra"
-        git config --local user.email "verte.fra@gmail.com"
+      - name: Set up Git
+        run: |
+          git config --local user.name "vertefra"
+          git config --local user.email "verte.fra@gmail.com"
 
-    - name: Tag the repository
-      run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
+      - name: Tag the repository
+        run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
 
-    - name: Push tags
-      run: git push origin --tags
+      - name: Push tags
+        run: git push origin --tags
