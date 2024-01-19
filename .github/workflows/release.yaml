@@ -9,13 +9,34 @@ env:
   DIST_DIR: dist
 
 jobs:
-  build-and-release:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+  
+  steps:
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+    
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21'  # Use the Go version of your choice
+
+    - name: Build
+      run: |
+        ./build.sh
+
+
+  release:
     strategy:
       matrix:
-        built: ['windows-amd64.exe', 'linux-amd64', 'darwin-amd64', 'darwin-arm64'] 
+        build: ['windows-amd64.exe', 'linux-amd64', 'darwin-amd64', 'darwin-arm64'] 
     
     name: Build and Release
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
     - name: Set up Git repository
@@ -27,22 +48,13 @@ jobs:
       id: get_version
       run: echo ::set-output name=VERSION::$(cat VERSION)
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.21'  # Use the Go version of your choice
-
-    - name: Build
-      run: |
-        ./build.sh
-
     # This step uses actions/upload-artifact to upload artifacts
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: binaries
         path: |
-          ${DIST_DIR}/${APP_NAME}-${{ matrix.built }}
+          ${DIST_DIR}/${APP_NAME}-${{ matrix.build }}
     # Create a release
     - name: Create Release
       id: create_release
@@ -62,8 +74,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${DIST_DIR}/${APP_NAME}-${{ matrix.built }}
-        asset_name: ${APP_NAME}-${{ matrix.built }}
+        asset_path: ${DIST_DIR}/${APP_NAME}-${{ matrix.build }}
+        asset_name: ${APP_NAME}-${{ matrix.build }}
         asset_content_type: application/octet-stream
 
   tag-branch:
@@ -72,7 +84,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Tag the repository with the release version
+      - name: Set up Git repository
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(cat VERSION)
+      # Tag the repository with the release version
       - name: Set up Git
         run: |
           git config --local user.name "vertefra"
