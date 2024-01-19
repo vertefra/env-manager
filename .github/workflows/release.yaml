@@ -13,7 +13,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
   
-  steps:
+    steps:
     - name: Set up Git repository
       uses: actions/checkout@v2
       with:
@@ -84,23 +84,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Git repository
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+    - name: Set up Git repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      
-      - name: Get version
-        id: get_version
-        run: echo ::set-output name=VERSION::$(cat VERSION)
-      # Tag the repository with the release version
-      - name: Set up Git
-        run: |
-          git config --local user.name "vertefra"
-          git config --local user.email "verte.fra@gmail.com"
+    
+    - name: Get version
+      id: get_version
+      run: echo ::set-output name=VERSION::$(cat VERSION)
+    # Tag the repository with the release version
+    - name: Set up Git
+      run: |
+        git config --local user.name "vertefra"
+        git config --local user.email "verte.fra@gmail.com"
 
-      - name: Tag the repository
-        run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
+    - name: Tag the repository
+      run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
 
-      - name: Push tags
-        run: git push origin --tags
+    - name: Push tags
+      run: git push origin --tags
