@@ -6,7 +6,7 @@ on:
       - master
 env:
   APP_NAME: env-manager
-  DIST_DIR: dist
+  DIST_DIR: ./dist
 
 jobs:
   build:
