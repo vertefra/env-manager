@@ -65,17 +65,6 @@ jobs:
         draft: false
         prerelease: false
 
-    # Upload assets to the release
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: $DIST_DIR/$APP_NAME-${{ matrix.os }}-${{ matrix.arch }}
-        asset_name: $APP_NAME-${{ matrix.os }}-${{ matrix.arch }}
-        asset_content_type: application/octet-stream
-
   tag-branch:
     name: Tag
     needs: build
