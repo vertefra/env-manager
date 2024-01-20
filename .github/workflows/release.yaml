@@ -30,8 +30,8 @@ jobs:
         go-version: '1.21'  # Use the Go version of your choice
 
     - name: Build
-      run:
-        mkdir -p ${DIST_DIR}
+      run: |
+        mkdir -p ${DIST_DIR} && \
         GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }} .
 
     - name: Get version
