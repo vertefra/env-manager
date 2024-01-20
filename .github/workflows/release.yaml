@@ -71,7 +71,7 @@ jobs:
 
   tag-branch:
     name: Tag
-    needs: release
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
