@@ -11,12 +11,16 @@ env:
 jobs:
   # Create release
   create-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest'
+    outputs:
+      RELEASE_URL: ${{ steps.create-release.outputs.upload_url }}
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    
     steps:
     - name: Get Version
       id: get_version
       run: |
-        echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+        echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
 
     - name: Create Release
       id: create-release
@@ -28,6 +32,9 @@ jobs:
         release_name: Release v${{ env.VERSION }}
         draft: false
         prerelease: false
+
+    - name: Save release url in env
+      run: echo "RELEASE_URL=${{ steps.create-release.outputs.upload_url }}" >> $GITHUB_OUTPUT
 
     - name: Save release url in env
       run: echo "RELEASE_URL=${{ steps.create-release.outputs.upload_url }}" >> $GITHUB_ENV
@@ -51,6 +58,18 @@ jobs:
     runs-on: ubuntu-latest
   
     steps:
+    - name: Log Version and Release Url
+      run: |
+        echo Version: ${{ needs.create-release.outputs.VERSION }}
+        echo Uploading to ${{ needs.create-release.outputs.RELEASE_URL }}
+        echo OS: ${{ matrix.os }}
+        echo ARCH: ${{ matrix.arch }}
+        echo Artifact Name: env-manager-${{ matrix.os }}-${{ matrix.arch }}
+        echo Saving in env...
+        echo "RELEASE_URL=${{ needs.create-release.outputs.RELEASE_URL }}" >> $GITHUB_ENV
+        echo "VERSION=${{ needs.create-release.outputs.VERSION }}" >> $GITHUB_ENV
+        echo "ARTIFACT_NAME=env-manager-${{ matrix.os }}-${{ matrix.arch }}" >> $GITHUB_ENV
+
     - name: Set up Git repository
       uses: actions/checkout@v2
       with:
@@ -64,15 +83,7 @@ jobs:
     - name: Build
       run: |
         mkdir -p ./dist && \
-        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ./dist/env-manager-${{ matrix.os }}-${{ matrix.arch }}
-
-    - name: Release Info
-      run: |
-        echo Version: ${{ steps.get_version.outputs.VERSION }}
-        echo Uploading to ${{ env.RELEASE_URL }}
-        echo Artifact: ./dist/env-manager-${{ matrix.os }}-${{ matrix.arch }}
-        echo Asset Name: env-manager-${{ matrix.os }}-${{ matrix.arch }}
-        echo Verify artifact exists: $(ls ./dist)
+        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ./dist/${{ env.ARTIFACT_NAME }}
 
     - name: Upload Release asset
       id: upload-release-asset
@@ -82,8 +93,8 @@ jobs:
 
       with:
         upload_url: ${{ env.RELEASE_URL }}
-        asset_path: ./dist/env-manager-${{ matrix.os }}-${{ matrix.arch }}
-        asset_name: env-manager-${{ matrix.os }}-${{ matrix.arch }}
+        asset_path: ./dist/${{ env.ARTIFACT_NAME }}
+        asset_name: ${{ env.ARTIFACT_NAME }}
         asset_content_type: application/gzip
 
 
