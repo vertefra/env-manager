@@ -13,7 +13,7 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
-    - get_version:
+    - name: Get Version
       id: get_version
       run: |
         echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
