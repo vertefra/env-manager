@@ -1,8 +1,11 @@
 
-# Env Manager 0.0.1
+# Env Manager 0.0.22
 
 Manages multiple `.env` files configurations for your project.
 Configurations are stored encrypted.
+
+## Install
+Run `install.sh` from your system
 
 ## Add a configuration
 In order to store a new configuration file you need to add an header to your file to
