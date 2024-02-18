@@ -56,7 +56,7 @@ func init_(filePath string, s ISecret) {
 	fmt.Print(filePath)
 
 	if filePath != "" {
-		manager.CreateInitFolderIfNotExist()
+		manager.CreateInitFolderIfNotExist(nil)
 		e := manager.ReadEnvFile(filePath)
 		secret := s.GetSecret()
 		manager.SaveEnvFile(e, secret)
