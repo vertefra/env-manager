@@ -39,7 +39,7 @@ jobs:
     - name: Build
       run: |
         mkdir -p ${DIST_DIR} && \
-        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }} .
+        GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
 
     - name: Get version
       id: get_version
@@ -67,6 +67,14 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Release Info
+      run: |
+        echo "The release ID is ${{ steps.create-release.outputs.id }}"
+        echo Uploading to ${{ steps.create-release.outputs.upload_url }}
+        echo Artifact: ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
+        echo Asset Name: ${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
+        echo Verify artifact exists: $(ls ${DIST_DIR})
+        
     - name: Upload Release asset
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
