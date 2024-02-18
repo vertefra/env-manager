@@ -6,7 +6,7 @@ on:
       - master
 env:
   APP_NAME: env-manager
-  DIST_DIR: ./dist
+  DIST_DIR: dist
 
 jobs:
   # Create release
@@ -61,12 +61,7 @@ jobs:
           go-version: '1.21'  # Use the Go version of your choice
 
       - name: Create distribution directory
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            New-Item -ItemType Directory -Path .\dist -Force
-          else
-            mkdir -p ./dist
-          fi
+        run: mkdir -p ${{ env.DIST_DIR }}
         shell: bash
       
       - name: Build
