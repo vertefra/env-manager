@@ -20,7 +20,7 @@ jobs:
     - name: Get Version
       id: get_version
       run: |
-        echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
+        echo "VERSION=$(cat ./VERSION)" >> $GITHUB_OUTPUT
 
     - name: Create Release
       id: create-release
