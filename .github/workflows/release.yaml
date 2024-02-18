@@ -9,6 +9,31 @@ env:
   DIST_DIR: ./dist
 
 jobs:
+  # Create release
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+    - get_version:
+      id: get_version
+      run: |
+        echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+
+    - name: Create Release
+      id: create-release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      with:
+        tag_name: ${{ matrix.os }}-${{ matrix.arch}}v${{ steps.get_version.outputs.VERSION }}
+        release_name: Release ${{ matrix.os }}-${{ matrix.arch}}v${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+
+    - name: Save release url in env
+      run: echo "RELEASE_URL=${{ steps.create-release.outputs.upload_url }}" >> $GITHUB_ENV
+
+  # Build and push to release
   build:
     strategy:
       matrix:
@@ -41,36 +66,10 @@ jobs:
         mkdir -p ${DIST_DIR} && \
         GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
 
-    - name: Get version
-      id: get_version
-      run: echo ::set-output name=VERSION::$(cat VERSION)
-
-    # This step uses actions/upload-artifact to upload artifacts
-    # - name: Upload Artifacts
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: binaries
-    #     path: |
-    #       ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
-
-
-
-    # Create a release
-    - name: Create Release
-      id: create-release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        tag_name: ${{ matrix.os }}-${{ matrix.arch}}v${{ steps.get_version.outputs.VERSION }}
-        release_name: Release ${{ matrix.os }}-${{ matrix.arch}}v${{ steps.get_version.outputs.VERSION }}
-        draft: false
-        prerelease: false
-
     - name: Release Info
       run: |
-        echo "The release ID is ${{ steps.create-release.outputs.id }}"
-        echo Uploading to ${{ steps.create-release.outputs.upload_url }}
+        echo Version: ${{ steps.get_version.outputs.VERSION }}
+        echo Uploading to ${{ env.RELEASE_URL }}
         echo Artifact: ${DIST_DIR}/${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
         echo Asset Name: ${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
         echo Verify artifact exists: $(ls ${DIST_DIR})
@@ -82,9 +81,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        upload_url: ${{ env.RELEASE_URL }}
         asset_path: ./dist/env-manager-${{ matrix.os }}-${{ matrix.arch }}
-        asset_name: ${APP_NAME}-${{ matrix.os }}-${{ matrix.arch }}
+        asset_name: env-manager-${{ matrix.os }}-${{ matrix.arch }}
         asset_content_type: application/gzip
 
 
