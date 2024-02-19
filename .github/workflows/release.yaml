@@ -42,6 +42,20 @@ jobs:
       - name: Get Version
         id: get_version
         run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+      - name: Verify latest release tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+
+      - name: Check if new release is needed
+        run: |
+          if [ "$LATEST_TAG" = "v$VERSION" ]; then
+            echo "No new release needed"
+            exit 1
+          fi
       
       - name: Create Release
         id: create-release
@@ -98,29 +112,3 @@ jobs:
           asset_path: ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
           asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
           asset_content_type: application/gzip
-
-  tag-branch:
-    name: Tag
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Set up Git repository
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-  
-    - name: Get version
-      id: get_version
-      run: echo ::set-output name=VERSION::$(cat VERSION)
-    # Tag the repository with the release version
-    - name: Set up Git
-      run: |
-        git config --local user.name "vertefra"
-        git config --local user.email "verte.fra@gmail.com"
-
-    - name: Tag the repository
-      run: git tag -a v${{ steps.get_version.outputs.VERSION }} -m "Release v${{ steps.get_version.outputs.VERSION }}"
-
-    - name: Push tags
-      run: git push origin --tags
