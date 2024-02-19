@@ -7,6 +7,7 @@ import (
 )
 
 const DOT_SECRET = ".secret"
+const ENV_SECRET = "ENV_MANAGER_SECRET"
 
 // Search the secret to encypt / decrypt the files
 // It can be in a file `.secret` or it can be passed
@@ -50,7 +51,7 @@ func getSecretFromFile() *string {
 }
 
 func getSecretFromEnv() *string {
-	secret := os.Getenv("ENV_SECRET")
+	secret := os.Getenv(ENV_SECRET)
 
 	if secret == "" {
 		return nil

@@ -1,38 +1,56 @@
 
-# Env Manager 0.0.22
+# Env Manager 0.0.24
 
 Manages multiple `.env` files configurations for your project.
 Configurations are stored encrypted.
 
 ## Install
-Run `install.sh` from your system
+Download and install installation script (Only tested on linux)
+
+```bash
+ curl -sSL https://raw.githubusercontent.com/vertefra/env-manager/master/install.sh | bash
+```
 
 ## Add a configuration
-In order to store a new configuration file you need to add an header to your file to
-specify the `identifier` of that configuration
+In order to store a new configuration file you need to add an `header` to your file.
+Headers are at the top of the file and are metadata about the file.
+The **identifier** identify the configuration when you want to restore it.
 
 _example_
 ```
 #- identifier: LOCAL
+#- restore-as: .env
 STAGE=LOCAL
 PEM_KEY=~/Downloads/MyKey.pem
 SECRET_KEY=~/Downloads/MyKey.pem
 ```
 
-You also need to generate a secret to encrypt your configurations.
-```
-openssl rand -hex 32 > .secret
+Another `header` is `restore-as` which is the name of the file that will be restored. If not provided the file will be restored as `.env`
+
+## Secrets
+In order to encrypt and decrypt the configurations you need to generate a secret.
+Secret is read first from the environment variable `ENV_MANAGER_SECRET`. If no secret is found, it will try to look into a `.secret` file in the current directory.
+
+> Valid secret is a 16, 24 or 32 bytes long string. If Generating from `hexadecimal` consider that 2 characters are 1 byte.
+
+**Generate a secret in .secret file**
+```bash
+openssl rand -hex 16 > .secret
 ```
 
-Currently this is the only way to pass the secret.
-Eventaully the secret will be read from environment and from cli argument.
+**Generate a secret in environment**
+```bash
+export ENV_MANAGER_SECRET=$(openssl rand -hex 16)
+```
 
+## Usage
+
+Adding a new configuration
 ```
 env-manager add -f .env
 ```
 
-This command will save the current `.env` enviroment using the `identifier` specified
-in the headers
+Where `.env` is the file you want to store and contains a valid `#- identifier: <config identifier>` header
 
 In order to restore it
 

@@ -24,6 +24,9 @@ func (e *EnvFile) readRestoreAs() {
 	// search for #- restore-as: <filename>
 	// in the header
 	// If not found, use the default name
+	if len(e.header) == 0 {
+		e.readHeader()
+	}
 	for _, line := range e.header {
 		if strings.HasPrefix(line, RESTORE_AS_HEADER) {
 			r := strings.TrimPrefix(line, RESTORE_AS_HEADER)
