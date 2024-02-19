@@ -54,7 +54,7 @@ jobs:
         run: |
           if [ "$LATEST_TAG" = "v$VERSION" ]; then
             echo "No new release needed"
-            exit 1
+            exit 0
           fi
       
       - name: Create Release
