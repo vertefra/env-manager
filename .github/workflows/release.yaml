@@ -54,13 +54,15 @@ jobs:
         run: |
           if [ "$LATEST_TAG" = "v$VERSION" ]; then
             echo "No new release needed"
-          fi 
+            echo "SKIP_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "SKIP_RELEASE=false" >> $GITHUB_ENV
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
         
       - name: Create Release
-        id: create-release
-        if: "${{ env.LATEST_TAG }}" != "v${{ env.VERSION }}"
+        if: env.SKIP_RELEASE != 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
@@ -69,6 +71,7 @@ jobs:
           release_name: Release v${{ env.VERSION }}
           draft: false
           prerelease: false
+
 
   build:
     needs: create-release
