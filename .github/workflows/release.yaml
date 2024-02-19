@@ -54,10 +54,10 @@ jobs:
         run: |
           if [ "$LATEST_TAG" = "v$VERSION" ]; then
             echo "No new release needed"
-            exit 0
           fi
       
       - name: Create Release
+        if: v${{ env.VERSION }} != ${{ env.LATEST_TAG }}
         id: create-release
         uses: actions/create-release@v1
         env:
@@ -70,6 +70,8 @@ jobs:
 
   build:
     needs: create-release
+    # Run onlu if a valid release url has been set
+    if: needs.create-release.outputs.RELEASE_URL != ''
     strategy:
       matrix:
         os: ['windows', 'linux', 'darwin']
