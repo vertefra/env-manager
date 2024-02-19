@@ -15,13 +15,21 @@ func cleanupDotSecretFile() {
 	os.Remove(DOT_SECRET)
 }
 
+// Clear env variable and .secret file
+func setup() {
+	os.Unsetenv(ENV_SECRET)
+	cleanupDotSecretFile()
+}
+
 // TestInitSecretFromFile tests InitSecret function when the secret is read from a file
 func TestInitSecretFromFile(t *testing.T) {
+	setup()
 	expectedSecret := "fileSecret"
 	err := createDotSecretFile(expectedSecret)
 	if err != nil {
 		t.Fatalf("Unable to create .secret file: %v", err)
 	}
+
 	defer cleanupDotSecretFile()
 
 	s := InitSecret()
@@ -34,8 +42,8 @@ func TestInitSecretFromFile(t *testing.T) {
 // TestInitSecretFromEnv tests InitSecret function when the secret is read from an environment variable
 func TestInitSecretFromEnv(t *testing.T) {
 	expectedSecret := "envSecret"
-	os.Setenv("ENV_SECRET", expectedSecret)
-	defer os.Unsetenv("ENV_SECRET")
+	os.Setenv(ENV_SECRET, expectedSecret)
+	defer os.Unsetenv(ENV_SECRET)
 
 	// Ensure no .secret file exists to test environment variable functionality
 	cleanupDotSecretFile()
