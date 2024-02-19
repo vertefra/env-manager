@@ -75,7 +75,7 @@ jobs:
 
   build:
     needs: create-release
-    # Run onlu if a valid release url has been set
+    # Run only if a valid release url has been set
     if: ${{ needs.create-release.outputs.RELEASE_URL }} != ''
     strategy:
       matrix:
