@@ -9,8 +9,27 @@ env:
   DIST_DIR: dist
 
 jobs:
+  # Test
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.21'  # Use the Go version of your choice
+      
+      - name: Lint Check
+        run: go vet ./...
+
+      - name: Run tests
+        run: go test -v ./...
+
   # Create release
   create-release:
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       RELEASE_URL: ${{ steps.create-release.outputs.upload_url }}

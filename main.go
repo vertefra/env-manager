@@ -43,7 +43,7 @@ func main() {
 // restores it using the provided secret, and prints "Get" to the console.
 func get(identifier string, s ISecret) {
 	fmt.Println("Get")
-	e := manager.GetEnvFile(identifier)
+	e := manager.GetEnvFile(identifier, &manager.DEFAULT_ENV_FOLDER)
 	secret := s.GetSecret()
 	manager.RestoreEnvFile(e, secret)
 }
@@ -56,10 +56,10 @@ func init_(filePath string, s ISecret) {
 	fmt.Print(filePath)
 
 	if filePath != "" {
-		manager.CreateInitFolderIfNotExist(nil)
-		e := manager.ReadEnvFile(filePath)
+		manager.CreateInitFolderIfNotExist(&manager.DEFAULT_ENV_FOLDER)
+		e := manager.ReadEnvFile(filePath, false)
 		secret := s.GetSecret()
-		manager.SaveEnvFile(e, secret)
+		manager.SaveEnvFile(e, secret, &manager.DEFAULT_ENV_FOLDER)
 	} else {
 		panic("No file path provided")
 	}

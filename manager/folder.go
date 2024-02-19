@@ -5,12 +5,7 @@ import (
 	"os"
 )
 
-var FOLDER_NAME = ".env-manager"
-
 func CreateInitFolderIfNotExist(folderName *string) {
-	if folderName == nil {
-		folderName = &FOLDER_NAME
-	}
 	fmt.Println("Creating init folder... ")
 	// Check if folder exists
 	// If not, create it
