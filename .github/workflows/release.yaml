@@ -59,8 +59,8 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
       
       - name: Create Release
-        if: v$VERSION != $LATEST_TAG
         id: create-release
+        if: "${{ env.LATEST_TAG }}" != "v${{ env.VERSION }}"
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
