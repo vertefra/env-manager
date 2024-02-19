@@ -73,6 +73,14 @@ jobs:
           draft: false
           prerelease: false
 
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log
+        run:
+          echo "Release URL: ${{ needs.create-release.outputs.RELEASE_URL }}"
+          echo "Version: ${{ needs.create-release.outputs.VERSION }}"
+
 
   build:
     needs: create-release
