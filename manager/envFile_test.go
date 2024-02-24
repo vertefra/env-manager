@@ -98,6 +98,15 @@ func TestSaveAndReadEnvFile(t *testing.T) {
 	// Inject custom folder path
 	SaveEnvFile(e, ENCRYPT_SECRET, &FOLDER_PATH)
 
+	// Test List Env Files
+	envFiles := GetEnvFiles(&FOLDER_PATH)
+
+	wantEnvFiles := len(envFiles) == 1
+
+	if !wantEnvFiles {
+		t.Errorf("GetEnvFiles() = %v, want %v", len(envFiles), 1)
+	}
+
 	// Read env file in the folder
 	e = ReadEnvFile(fmt.Sprintf("%s/%s%s", FOLDER_PATH, SAVED_PREFIX, ENV_FILE_IDENTIFIER), true)
 	println(e.encrypted)

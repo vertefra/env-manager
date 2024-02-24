@@ -1,5 +1,4 @@
-name: Go CI and Release
-
+name: test and release
 on:
   push:
     branches:
@@ -19,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.21'  # Use the Go version of your choice
+          go-version: '1.21'
       
       - name: Lint Check
         run: go vet ./...
