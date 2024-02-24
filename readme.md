@@ -1,5 +1,5 @@
 
-# Env Manager ![Static Badge](https://img.shields.io/badge/version-0.26-blue?style=flat&label=version&labelColor=blue&color=orange)
+# Env Manager ![Static Badge](https://img.shields.io/badge/version-0.26-blue?style=flat&label=version&labelColor=darkblue&color=black)
 
 Manages multiple `.env` files configurations for your project.
 Configurations are stored encrypted.
@@ -45,16 +45,31 @@ export ENV_MANAGER_SECRET=$(openssl rand -hex 16)
 
 ## Usage
 
-Adding a new configuration
+**Add a new configuration**
 ```
 env-manager add -f .env
 ```
 
 Where `.env` is the file you want to store and contains a valid `#- identifier: <config identifier>` header
 
-In order to restore it
+This will add the current configuation present in your `.env` file to the manager enviroment. The configuration will be identified by the `#- identifier` header.
+
+
+**Restore a configuration**
 
 ```
 env-manager get -i <header identifer>
 ```
+
+Where `<header identifer>` is the identifier of the configuration you want to restore.
+
+**List all configurations**
+
+```
+env-manager list
+```
+
+Shows all the identifiers of the configurations stored in the manager.
+
+
 
