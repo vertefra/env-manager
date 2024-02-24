@@ -20,6 +20,22 @@ type EnvFile struct {
 	restoreAs   string // Name of the decrypted file
 }
 
+func (e *EnvFile) RestoreAs() string {
+	return e.fileContent
+}
+
+func (e *EnvFile) Identifier() string {
+	return e.identifier
+}
+
+func (e *EnvFile) IsEncrypted() bool {
+	return e.encrypted != ""
+}
+
+func (e *EnvFile) Headers() []string {
+	return e.header
+}
+
 func (e *EnvFile) readRestoreAs() {
 	// search for #- restore-as: <filename>
 	// in the header
@@ -120,6 +136,7 @@ func (e *EnvFile) decrypt(key string) {
 	e.fileContent = string(ciphertext)
 }
 
+// Utility function to get the list of files in the env-manager folder
 func getEnvFileList(folderPath *string) []string {
 	files, err := os.ReadDir(*folderPath)
 	if err != nil {
@@ -138,6 +155,8 @@ func getEnvFileList(folderPath *string) []string {
 
 	return fileNames
 }
+
+/// Functions
 
 func GetEnvFile(identifier string, folder *string) *EnvFile {
 
@@ -160,9 +179,19 @@ func GetEnvFile(identifier string, folder *string) *EnvFile {
 	return e
 }
 
-///
-/// Public functions
-///
+func GetEnvFiles(folder *string) []*EnvFile {
+	allIdentifiers := getEnvFileList(folder)
+
+	var envFiles []*EnvFile
+
+	for _, id := range allIdentifiers {
+		filePath := fmt.Sprintf("%s/%s%s", *folder, SAVED_PREFIX, id)
+		e := ReadEnvFile(filePath, true)
+		envFiles = append(envFiles, e)
+	}
+
+	return envFiles
+}
 
 func RestoreEnvFile(e *EnvFile, decryptSecret string) {
 	e.decrypt(decryptSecret)

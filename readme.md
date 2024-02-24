@@ -1,5 +1,5 @@
 
-# Env Manager 0.0.24
+# Env Manager ![Static Badge](https://img.shields.io/badge/version-0.26-blue?style=flat&label=version&labelColor=blue&color=orange)
 
 Manages multiple `.env` files configurations for your project.
 Configurations are stored encrypted.
