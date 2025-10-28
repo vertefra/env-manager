@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the GitHub repository
-REPO="vertefra/env-manager"
+REPO="thinktwiceco/env-manager"
 
 # Get the OS and architecture for the system
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')

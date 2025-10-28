@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,12 +13,10 @@ import (
 )
 
 type EnvFile struct {
-	header      []string
+	header      *Header
 	fileContent string
 	encrypted   string
-	identifier  string
 	folderPath  string // Where the encrypted file is saved
-	restoreAs   string // Name of the decrypted file
 }
 
 func (e *EnvFile) RestoreAs() string {
@@ -25,7 +24,7 @@ func (e *EnvFile) RestoreAs() string {
 }
 
 func (e *EnvFile) Identifier() string {
-	return e.identifier
+	return e.header.Identifier
 }
 
 func (e *EnvFile) IsEncrypted() bool {
@@ -33,64 +32,25 @@ func (e *EnvFile) IsEncrypted() bool {
 }
 
 func (e *EnvFile) Headers() []string {
-	return e.header
+	return e.header.String()
 }
 
 func (e *EnvFile) readRestoreAs() {
 	// search for #- restore-as: <filename>
 	// in the header
 	// If not found, use the default name
-	if len(e.header) == 0 {
-		e.readHeader()
-	}
-	for _, line := range e.header {
-		if strings.HasPrefix(line, RESTORE_AS_HEADER) {
-			r := strings.TrimPrefix(line, RESTORE_AS_HEADER)
-			e.restoreAs = strings.Trim(r, " ")
-			return
-		}
-	}
-
-	if e.restoreAs == "" {
-		e.restoreAs = DEFAULT_RESTORE_AS
+	if e.header.RestoreAs == "" {
+		e.header.RestoreAs = DEFAULT_RESTORE_AS
 	}
 }
 
-func (e *EnvFile) readIdentifier() {
-	// Search for #- identifier: <identifier>
-	// in the header
-	// If not found, exit with error
-
-	for _, line := range e.header {
-		if strings.HasPrefix(line, IDENTIFIER_HEADER) {
-			i := strings.TrimPrefix(line, IDENTIFIER_HEADER)
-			e.identifier = strings.Trim(i, " ")
-			return
-		}
+func (e *EnvFile) readHeader() error {
+	h, err := InitHeader(e.fileContent)
+	if err != nil {
+		return err
 	}
-
-	if e.identifier == "" {
-		fmt.Println("Identifier not found")
-		os.Exit(1)
-	}
-}
-
-func (e *EnvFile) readHeader() {
-	if e.fileContent == "" {
-		fmt.Println("File content is empty")
-		os.Exit(1)
-	}
-
-	// Read first line
-	// If it starts with #-, it's a header
-
-	lines := strings.Split(e.fileContent, "\n")
-
-	for _, line := range lines {
-		if strings.HasPrefix(line, "#-") {
-			e.header = append(e.header, line)
-		}
-	}
+	e.header = h
+	return nil
 }
 
 func (e *EnvFile) encrypt(key string) {
@@ -136,71 +96,59 @@ func (e *EnvFile) decrypt(key string) {
 	e.fileContent = string(ciphertext)
 }
 
-// Utility function to get the list of files in the env-manager folder
-func getEnvFileList(folderPath *string) []string {
-	files, err := os.ReadDir(*folderPath)
-	if err != nil {
-		panic(err)
-	}
-
-	var fileNames []string
-
-	for _, file := range files {
-		var name = file.Name()
-		// File gets saved as .env.<identifier>
-		// split the name and keep the identifier
-		name = strings.TrimPrefix(name, SAVED_PREFIX)
-		fileNames = append(fileNames, name)
-	}
-
-	return fileNames
-}
-
 /// Functions
 
-func GetEnvFile(identifier string, folder *string) *EnvFile {
+func GetEnvFile(identifier string, folder *string) (*EnvFile, error) {
+	f, err := GetOrCreateFolder(folder)
 
-	allIdentifiers := getEnvFileList(folder)
+	if err != nil {
+		return nil, err
+	}
 
-	validIdentifier := false
+	allIdentifiers := f.GetIdentifiers()
+
 	for _, id := range allIdentifiers {
-		if id == identifier {
-			validIdentifier = true
-			break
+		if string(id) == identifier {
+			return ReadEnvFile(fmt.Sprintf("%s/%s%s", f.FolderPath, SAVED_PREFIX, identifier)), nil
 		}
 	}
 
-	if !validIdentifier {
-		panic("Invalid identifier - " + identifier)
-	}
-
-	filePath := fmt.Sprintf("%s/%s%s", *folder, SAVED_PREFIX, identifier)
-	e := ReadEnvFile(filePath, true)
-	return e
+	return nil, errors.New("invalid identifier - " + identifier)
 }
 
-func GetEnvFiles(folder *string) []*EnvFile {
-	allIdentifiers := getEnvFileList(folder)
+func GetEnvFiles(folder *string) ([]*EnvFile, error) {
+	f, err := GetOrCreateFolder(folder)
+	if err != nil {
+		return nil, err
+	}
+
+	allIdentifiers := f.GetIdentifiers()
 
 	var envFiles []*EnvFile
 
 	for _, id := range allIdentifiers {
 		filePath := fmt.Sprintf("%s/%s%s", *folder, SAVED_PREFIX, id)
-		e := ReadEnvFile(filePath, true)
+		e := ReadEnvFile(filePath)
 		envFiles = append(envFiles, e)
 	}
 
-	return envFiles
+	return envFiles, nil
 }
 
 func RestoreEnvFile(e *EnvFile, decryptSecret string) {
 	e.decrypt(decryptSecret)
 
+	// Re-parse header from decrypted content to get correct restoreAs
+	h, err := InitHeader(e.fileContent)
+	if err == nil {
+		e.header = h
+	}
+
 	e.readRestoreAs()
 
-	fmt.Printf("Restoring file %s as %s\n", e.folderPath, e.restoreAs)
+	fmt.Printf("Restoring file %s as %s\n", e.folderPath, e.header.RestoreAs)
 
-	f, err := os.Create(e.restoreAs)
+	f, err := os.Create(e.header.RestoreAs)
 
 	if err != nil {
 		fmt.Println("Error creating file")
@@ -230,7 +178,7 @@ func SaveEnvFile(e *EnvFile, encryptSecret string, folderPath *string) {
 		e.folderPath = *folderPath
 	}
 
-	filePath := fmt.Sprintf("%s/%s%s", e.folderPath, SAVED_PREFIX, e.identifier)
+	filePath := fmt.Sprintf("%s/%s%s", e.folderPath, SAVED_PREFIX, e.header.Identifier)
 	fmt.Printf("Saving file: %s\n", filePath)
 
 	f, err := os.Create(filePath)
@@ -254,7 +202,23 @@ func SaveEnvFile(e *EnvFile, encryptSecret string, folderPath *string) {
 	}
 }
 
-func ReadEnvFile(filePath string, fromEncrypted bool) *EnvFile {
+func InitEnvFile(identifier string, restoreAs string) *EnvFile {
+	h := &Header{
+		Identifier: identifier,
+		RestoreAs:  restoreAs,
+	}
+	return &EnvFile{
+		header: h,
+	}
+}
+
+func (e *EnvFile) SetContent(content string) {
+	// Add headers to the content so they're preserved when encrypting
+	headerContent := fmt.Sprintf("%s%s\n%s%s\n", IDENTIFIER_HEADER, e.header.Identifier, RESTORE_AS_HEADER, e.header.RestoreAs)
+	e.fileContent = headerContent + content
+}
+
+func ReadEnvFile(filePath string) *EnvFile {
 	fmt.Printf("Reading file: %s\n", filePath)
 
 	f, err := os.Open(filePath)
@@ -282,16 +246,26 @@ func ReadEnvFile(filePath string, fromEncrypted bool) *EnvFile {
 	e := EnvFile{}
 	// If filepath starts with the .env-manager folder
 	// then the content is encrypted
-	if fromEncrypted {
-		// Identifier is <filename>.<identifier>
-		sgmts := strings.Split(filePath, ".")
-		identifier := sgmts[len(sgmts)-1]
+	if strings.Contains(filePath, DEFAULT_ENV_FOLDER) || strings.Contains(filePath, SAVED_PREFIX) {
 		e.encrypted = c
-		e.identifier = identifier
+		e.folderPath = filePath
+		// For encrypted files, extract identifier from filename
+		parts := strings.Split(filePath, "/")
+		filename := parts[len(parts)-1]
+		identifier := strings.TrimPrefix(filename, SAVED_PREFIX)
+		e.header = &Header{
+			Identifier: identifier,
+			RestoreAs:  DEFAULT_RESTORE_AS,
+		}
 	} else {
 		e.fileContent = c
-		e.readHeader()
-		e.readIdentifier()
+		h, err := InitHeader(c)
+		if err != nil {
+			fmt.Println("Error initializing header")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		e.header = h
 	}
 	return &e
 }

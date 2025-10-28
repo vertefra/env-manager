@@ -41,7 +41,7 @@ func getSecretFromFile() *string {
 	}
 
 	secret := string(fileContent)
-	secret = strings.Trim(secret, " ")
+	secret = strings.TrimSpace(secret)
 
 	if secret == "" {
 		return nil
