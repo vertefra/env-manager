@@ -1,5 +1,7 @@
 ![Static Badge](https://img.shields.io/badge/version-0.1.0-blue?style=flat&label=version&labelColor=darkblue&color=black)
 
+[![test](https://github.com/vertefra/env-manager/actions/workflows/test.yaml/badge.svg)](https://github.com/vertefra/env-manager/actions/workflows/test.yaml)
+
 # Env Manager
 
 Securely store and manage encrypted environment configurations.
