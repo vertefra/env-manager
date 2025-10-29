@@ -1,8 +1,7 @@
-module github.com/vertefra/env
+module github.com/thinktwiceco/env-manager
 
-go 1.21.4
+go 1.25.3
 
-require (
-	github.com/alexflint/go-arg v1.4.3 // indirect
-	github.com/alexflint/go-scalar v1.1.0 // indirect
-)
+require github.com/alexflint/go-arg v1.6.0
+
+require github.com/alexflint/go-scalar v1.2.0 // indirect

@@ -1,75 +1,69 @@
+![Static Badge](https://img.shields.io/badge/version-0.1.0-blue?style=flat&label=version&labelColor=darkblue&color=black)
 
-# Env Manager ![Static Badge](https://img.shields.io/badge/version-0.26-blue?style=flat&label=version&labelColor=darkblue&color=black)
+# Env Manager
 
-Manages multiple `.env` files configurations for your project.
-Configurations are stored encrypted.
+Securely store and manage encrypted environment configurations.
 
-## Install
-Download and install installation script (Only tested on linux)
+## Setup
 
+**Install** (Linux only)
 ```bash
- curl -sSL https://raw.githubusercontent.com/vertefra/env-manager/master/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/thinktwiceco/env-manager/master/install.sh | bash
 ```
 
-## Add a configuration
-In order to store a new configuration file you need to add an `header` to your file.
-Headers are at the top of the file and are metadata about the file.
-The **identifier** identify the configuration when you want to restore it.
-
-_example_
-```
-#- identifier: LOCAL
-#- restore-as: .env
-STAGE=LOCAL
-PEM_KEY=~/Downloads/MyKey.pem
-SECRET_KEY=~/Downloads/MyKey.pem
-```
-
-Another `header` is `restore-as` which is the name of the file that will be restored. If not provided the file will be restored as `.env`
-
-## Secrets
-In order to encrypt and decrypt the configurations you need to generate a secret.
-Secret is read first from the environment variable `ENV_MANAGER_SECRET`. If no secret is found, it will try to look into a `.secret` file in the current directory.
-
-> Valid secret is a 16, 24 or 32 bytes long string. If Generating from `hexadecimal` consider that 2 characters are 1 byte.
-
-**Generate a secret in .secret file**
+**Create encryption key**
 ```bash
 openssl rand -hex 16 > .secret
 ```
+> Secret can also be set via `ENV_MANAGER_SECRET` environment variable
 
-**Generate a secret in environment**
+## Commands
+
+### `add` - Import file with headers
+For files that already have env-manager headers:
 ```bash
-export ENV_MANAGER_SECRET=$(openssl rand -hex 16)
+env-manager add -f .env.production
 ```
 
-## Usage
-
-**Add a new configuration**
-```
-env-manager add -f .env
-```
-
-Where `.env` is the file you want to store and contains a valid `#- identifier: <config identifier>` header
-
-This will add the current configuation present in your `.env` file to the manager enviroment. The configuration will be identified by the `#- identifier` header.
-
-
-**Restore a configuration**
-
-```
-env-manager get -i <header identifer>
+**File format:**
+```bash
+#- identifier: production
+#- restore-as: .env
+DATABASE_URL=postgres://localhost/db
+API_KEY=secret123
 ```
 
-Where `<header identifer>` is the identifier of the configuration you want to restore.
-
-**List all configurations**
-
+### `create` - Import plain file
+For plain environment files without headers:
+```bash
+env-manager create -f secrets.txt -i production -r .env
 ```
+
+### `get` - Restore configuration
+```bash
+env-manager get -i production
+```
+Decrypts and restores the configuration file.
+
+### `list` - Show all configurations
+```bash
 env-manager list
 ```
 
-Shows all the identifiers of the configurations stored in the manager.
+### `remove` - Delete configuration
+```bash
+env-manager remove -i production
+```
 
+## How It Works
 
+1. Files are encrypted using AES and stored in `.env-manager/`
+2. A `manifest.json` tracks all configurations
+3. Identifiers map to encrypted files for easy retrieval
+4. On restore, files are decrypted and written with their original name
 
+## Security
+
+- ⚠️ **Keep `.secret` secure** - anyone with this key can decrypt your files
+- ✅ Add `.secret` and `.env-manager/` to `.gitignore`
+- ✅ Valid keys: 16, 24, or 32 bytes (32, 48, or 64 hex characters)

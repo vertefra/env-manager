@@ -1,0 +1,11 @@
+{
+  "go.goroot": "${env:HOME}/.local/share/mise/installs/go/1.25.3",
+  "go.gopath": "${env:HOME}/go",
+  "go.toolsGopath": "${env:HOME}/.local/share/mise/installs/go/1.25.3",
+  "go.alternateTools": {
+    "go": "${env:HOME}/.local/share/mise/installs/go/1.25.3/bin/go",
+    "gopls": "${env:HOME}/.local/share/mise/installs/go/1.25.3/bin/gopls",
+    "dlv": "${env:HOME}/.local/share/mise/installs/go/1.25.3/bin/dlv"
+  }
+}
+

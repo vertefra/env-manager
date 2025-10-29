@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.25.3'
       
       - name: Lint Check
         run: go vet ./...
@@ -26,95 +26,77 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
-  # Create release
-  create-release:
+  # Create release and build binaries
+  release:
     needs: test
     runs-on: ubuntu-latest
-    outputs:
-      RELEASE_URL: ${{ steps.create-release.outputs.upload_url }}
-      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
       
       - name: Get Version
         id: get_version
-        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+        run: |
+          VERSION=$(cat VERSION)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
 
-      - name: Verify latest release tag
+      - name: Check if release exists
+        id: check_release
         run: |
           git fetch --tags
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "Latest tag: $latest_tag"
-          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
-
-      - name: Check if new release is needed
-        run: |
-          if [ "$LATEST_TAG" = "v$VERSION" ]; then
-            echo "No new release needed"
-            echo "SKIP_RELEASE=true" >> $GITHUB_ENV
+          if git rev-parse "v${{ steps.get_version.outputs.VERSION }}" >/dev/null 2>&1; then
+            echo "RELEASE_EXISTS=true" >> $GITHUB_OUTPUT
+            echo "Release v${{ steps.get_version.outputs.VERSION }} already exists"
           else
-            echo "SKIP_RELEASE=false" >> $GITHUB_ENV
+            echo "RELEASE_EXISTS=false" >> $GITHUB_OUTPUT
+            echo "Creating new release v${{ steps.get_version.outputs.VERSION }}"
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-        
-      - name: Create Release
-        id: create-release
-        if: env.SKIP_RELEASE != 'true'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Set up Go
+        if: steps.check_release.outputs.RELEASE_EXISTS == 'false'
+        uses: actions/setup-go@v5
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: Release v${{ env.VERSION }}
+          go-version: '1.25.3'
+
+      - name: Build binaries
+        if: steps.check_release.outputs.RELEASE_EXISTS == 'false'
+        run: |
+          mkdir -p ${{ env.DIST_DIR }}
+          
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-linux-amd64
+          
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-linux-arm64
+          
+          # macOS AMD64 (Intel)
+          GOOS=darwin GOARCH=amd64 go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-darwin-amd64
+          
+          # macOS ARM64 (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-darwin-arm64
+          
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-windows-amd64.exe
+      
+      - name: Create Release
+        if: steps.check_release.outputs.RELEASE_EXISTS == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
-
-  build:
-    needs: create-release
-    # Run only if a valid release url has been set
-    if: ${{ needs.create-release.outputs.RELEASE_URL }} != ''
-    strategy:
-      matrix:
-        os: ['windows', 'linux', 'darwin']
-        arch: ['amd64', 'arm64']
-        exclude:
-          - os: windows
-            arch: arm64
-          - os: linux
-            arch: arm64
-          - os: darwin
-            arch: amd64
-        
-    runs-on: ubuntu-latest
-  
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.21'  # Use the Go version of your choice
-
-      - name: Create distribution directory
-        run: mkdir -p ${{ env.DIST_DIR }}
-        shell: bash
-      
-      - name: Build
-        run: |
-          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
+          files: |
+            ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-linux-amd64
+            ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-linux-arm64
+            ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-darwin-amd64
+            ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-darwin-arm64
+            ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-windows-amd64.exe
         env:
-          VERSION: ${{ needs.create-release.outputs.VERSION }}
-      
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.RELEASE_URL }}
-          asset_path: ${{ env.DIST_DIR }}/${{ env.APP_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
-          asset_name: ${{ env.APP_NAME }}-${{ matrix.os }}-${{ matrix.arch }}
-          asset_content_type: application/gzip
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
