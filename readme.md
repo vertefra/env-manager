@@ -8,7 +8,7 @@ Securely store and manage encrypted environment configurations.
 
 **Install** (Linux only)
 ```bash
-curl -sSL https://raw.githubusercontent.com/vertefra/env-manager/master/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/thinktwiceco/env-manager/master/install.sh | bash
 ```
 
 **Create encryption key**
